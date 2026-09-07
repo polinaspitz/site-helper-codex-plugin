@@ -11,40 +11,41 @@
 ## Что нужно сотруднику
 
 1. Установить ChatGPT Desktop и открыть Codex.
-2. Получить у администратора общий Site Helper Bearer token.
-3. Выбрать/получить уникальный ASCII-slug сотрудника, например `artem`, `anna`, `roman`, `sasha`.
-4. Сохранить token как `SITE_HELPER_MCP_TOKEN`, а slug как `SITE_HELPER_MCP_USER`.
-5. В Codex открыть **Плагины → Добавить marketplace** и указать:
+2. Получить у администратора **персональный Site Helper Bearer token**.
+3. Сохранить его локально как `SITE_HELPER_MCP_TOKEN`.
+4. В Codex открыть **Плагины → Добавить marketplace** и указать:
 
    `https://github.com/polinaspitz/site-helper-codex-plugin`
 
-6. Установить плагин **Site Helper**.
-7. Полностью перезапустить Codex.
-8. Работать в обычном новом чате, без локального clone dev-repo.
+5. Установить плагин **Site Helper**.
+6. Полностью перезапустить Codex.
+7. Работать в обычном новом чате, без локального clone dev-repo.
 
-## Зачем нужен `SITE_HELPER_MCP_USER`
+## Персональный Bearer token и identity
 
-`SITE_HELPER_MCP_TOKEN` и `SITE_HELPER_MCP_USER` решают разные задачи:
+`SITE_HELPER_MCP_TOKEN` теперь одновременно решает две задачи:
 
-- `SITE_HELPER_MCP_TOKEN` — **секрет**, который разрешает доступ к MCP;
-- `SITE_HELPER_MCP_USER` — **не секрет**, а стабильное имя сотрудника для общего Shared Hosting Traffic Light.
+- разрешает доступ к MCP;
+- позволяет серверу определить, **кто именно из сотрудников работает**.
 
-Plugin автоматически отправляет:
+У каждого сотрудника должен быть свой token. Reverse proxy сопоставляет token с именем сотрудника и передаёт это имя внутрь Site Helper как trusted `X-MCP-User`.
 
-`X-MCP-User: <SITE_HELPER_MCP_USER>`
-
-Сервер использует это имя в общем замке хостинг-аккаунтов. Нормальный holder выглядит так:
+Нормальный holder в Shared Hosting Traffic Light выглядит так:
 
 `site-helper-mcp-chatgpt:artem`
 
-Если `SITE_HELPER_MCP_USER` не задан, holder будет `site-helper-mcp-chatgpt:anon`. Светофор всё ещё защищает от Claude/других runtime, но разные пользователи Codex не различаются между собой, поэтому `anon` считается ошибкой настройки.
+`site-helper-mcp-chatgpt:anna`
 
-## Windows: сохранить token и имя сотрудника для Codex
+Отдельная переменная `SITE_HELPER_MCP_USER` больше **не используется**. Plugin также не полагается на `env_http_headers` для identity.
 
-Открыть Windows PowerShell и выполнить. В строке `$user = "artem"` заменить `artem` на выданный сотруднику уникальный slug.
+Если `traffic_light` показывает `site-helper-mcp-chatgpt:anon`, значит запрос пришёл через legacy/unidentified token или reverse-proxy identity не настроена корректно.
+
+## Windows: сохранить token для Codex
+
+Открыть Windows PowerShell и выполнить:
 
 ```powershell
-$secure = Read-Host "Вставь 64-символьный Site Helper MCP token" -AsSecureString
+$secure = Read-Host "Вставь 64-символьный персональный Site Helper MCP token" -AsSecureString
 $ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
 try {
     $token = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)
@@ -57,15 +58,8 @@ if ($token.Length -ne 64 -or $token -notmatch '^[0-9a-fA-F]{64}$') {
     throw "Неверный token: длина $($token.Length), ожидается ровно 64 hex-символа"
 }
 
-$user = "artem"
-if ($user -notmatch '^[a-z0-9._-]{2,40}$') {
-    throw "SITE_HELPER_MCP_USER должен быть уникальным ASCII-slug: a-z, 0-9, . _ -"
-}
-
 [Environment]::SetEnvironmentVariable("SITE_HELPER_MCP_TOKEN", $token, "User")
-[Environment]::SetEnvironmentVariable("SITE_HELPER_MCP_USER", $user, "User")
 $env:SITE_HELPER_MCP_TOKEN = $token
-$env:SITE_HELPER_MCP_USER = $user
 
 $codexDir = "$HOME\.codex"
 $envFile = "$codexDir\.env"
@@ -79,7 +73,6 @@ if (Test-Path $envFile) {
     })
 }
 $old += "SITE_HELPER_MCP_TOKEN=$token"
-$old += "SITE_HELPER_MCP_USER=$user"
 
 [System.IO.File]::WriteAllLines(
     $envFile,
@@ -88,25 +81,12 @@ $old += "SITE_HELPER_MCP_USER=$user"
 )
 
 Remove-Variable token
-Write-Host "Site Helper token saved: OK"
-Write-Host "Site Helper user: $user"
+Write-Host "Site Helper personal token saved: OK"
 ```
 
-Токен не нужно вставлять в сообщения ChatGPT/Codex и нельзя коммитить в GitHub. Имя сотрудника секретом не является, но должно быть уникальным и стабильным.
+Токен не нужно вставлять в сообщения ChatGPT/Codex, нельзя публиковать, коммитить в GitHub или прикладывать к скриншотам.
 
-## Проверка локальных переменных
-
-После настройки можно проверить без вывода token:
-
-```powershell
-$t=[Environment]::GetEnvironmentVariable("SITE_HELPER_MCP_TOKEN","User")
-$u=[Environment]::GetEnvironmentVariable("SITE_HELPER_MCP_USER","User")
-Write-Host "Token length:" $t.Length "| User:" $u
-```
-
-Ожидается длина token `64` и правильный slug сотрудника.
-
-После изменения переменных **полностью перезапустить Codex**.
+После изменения token **полностью перезапустить Codex**.
 
 ## Первый read-only тест
 
@@ -122,11 +102,11 @@ Write-Host "Token length:" $t.Length "| User:" $u
 В конце сообщи currentHolder из traffic_light.
 ```
 
-Ожидается подключение к центральному Site Helper, актуальный список MCP tools и holder вида:
+Ожидается holder вида:
 
-`site-helper-mcp-chatgpt:<ваш slug>`
+`site-helper-mcp-chatgpt:<имя сотрудника>`
 
-`site-helper-mcp-chatgpt:anon` означает, что `SITE_HELPER_MCP_USER` не подхватился.
+Если holder заканчивается на `:anon`, установка identity не считается завершённой.
 
 ## Shared Hosting Traffic Light
 
@@ -135,15 +115,6 @@ Site Helper координирует работу по общим хостинг
 - `traffic_light` показывает, кем и каким сайтом сейчас занят аккаунт, а также yellow/red cooldown.
 - Если файловая операция получила отказ светофора, не нужно повторять её в цикле или пытаться обойти другим инструментом. Нужно дождаться освобождения или перейти к другому аккаунту.
 - `traffic_light_release` может отпускать только собственную аренду текущего пользователя Codex. Чужие аренды снять нельзя.
-
-## Для уже установленного Site Helper
-
-Если Site Helper был установлен до Shared Hosting Traffic Light:
-
-1. задать `SITE_HELPER_MCP_USER`;
-2. обновить/refresh marketplace и плагин Site Helper до актуальной версии;
-3. полностью перезапустить Codex;
-4. вызвать `traffic_light` и убедиться, что `currentHolder` не заканчивается на `:anon`.
 
 ## Архитектура обновлений
 
@@ -156,17 +127,17 @@ Site Helper координирует работу по общим хостинг
 
 Они меняются в private dev/runtime repo и выкатываются на VPS. Сотрудник получает их автоматически при следующей рабочей сессии.
 
-Этот distribution repo нужно обновлять только если меняется сам plugin wrapper: MCP URL, transport/auth protocol, имя auth env var, identity header/env var, bootstrap contract или UI/metadata/skill плагина.
+Этот distribution repo нужно обновлять только если меняется сам plugin wrapper: MCP URL, transport/auth protocol, имя auth env var, bootstrap contract или UI/metadata/skill плагина.
 
 ## Security
 
 В этом public repo **никогда не должны появляться**:
 
-- Site Helper Bearer token;
+- Site Helper Bearer tokens;
 - `.env`;
 - `GITHUB_TOKEN`;
 - `ENCRYPTION_KEY`;
 - DB / SSH / Strapi credentials;
 - private бизнес-данные.
 
-Публичность этого repo не даёт доступ к Site Helper MCP: endpoint защищён Bearer authentication и без правильного токена отвечает `401 Unauthorized`.
+Публичность этого repo не даёт доступ к Site Helper MCP: endpoint защищён Bearer authentication и без действительного персонального token отвечает `401 Unauthorized`.
