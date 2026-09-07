@@ -1,7 +1,7 @@
 {
   "name": "site-helper",
-  "version": "0.1.0",
-  "description": "Connector-first Site Helper for Codex. Uses the central remote MCP for live sites, AgentDB, Strapi, GitHub, and centrally served operating playbooks.",
+  "version": "0.2.0",
+  "description": "Connector-first Site Helper for Codex. Uses the central remote MCP for live sites, shared hosting coordination, AgentDB, Strapi, GitHub, and centrally served operating playbooks.",
   "author": {
     "name": "Site Helper Team"
   },
@@ -19,7 +19,7 @@
   "interface": {
     "displayName": "Site Helper",
     "shortDescription": "Work on live sites through the central Site Helper connector.",
-    "longDescription": "Connector-first Site Helper for Codex. The remote MCP provides the tools, central agent rules, and playbooks, so end users do not clone or update the development repository.",
+    "longDescription": "Connector-first Site Helper for Codex. The remote MCP provides tools, shared hosting coordination, central agent rules, and playbooks, so end users do not clone or update the development repository.",
     "developerName": "Site Helper Team",
     "category": "Developer Tools",
     "capabilities": [
