@@ -20,7 +20,8 @@ Site Helper participates in a shared hosting-account lease with Claude and other
 - Never bypass, hammer, or retry around a lease refusal. A busy, yellow, or red account is a coordination decision, not a transient error to brute-force.
 - When access is refused or when the user asks who is working where, call `traffic_light` and explain the current holder, site, cooldown/block, and remaining wait.
 - `traffic_light_release` may be used only to release the current Codex user's own lease when work on that hosting account is genuinely finished. Never use it to release another user or another service.
-- If `traffic_light` reports the current holder as `site-helper-mcp-chatgpt:anon`, tell the user that `SITE_HELPER_MCP_USER` is missing or not reaching the connector. Do not treat `anon` as a correctly configured team identity.
+- Caller identity is assigned server-side from the employee's personal Site Helper Bearer token. The plugin does not send a separate identity header from a local environment variable.
+- If `traffic_light` reports `site-helper-mcp-chatgpt:anon`, treat that as an identity/proxy configuration problem or a legacy unidentified token, not as a correctly configured team identity.
 - Do not confuse a shared red/cooldown state with a bad SSH password. Wait or switch accounts according to the traffic-light message.
 
 ## Default workflow
