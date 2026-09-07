@@ -1,0 +1,20 @@
+{
+  "name": "site-helper-team",
+  "interface": {
+    "displayName": "Site Helper Team"
+  },
+  "plugins": [
+    {
+      "name": "site-helper",
+      "source": {
+        "source": "local",
+        "path": "./plugins/site-helper"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}
