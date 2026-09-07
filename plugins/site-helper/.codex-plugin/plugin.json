@@ -1,6 +1,6 @@
 {
   "name": "site-helper",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Connector-first Site Helper for Codex. Uses the central remote MCP for live sites, shared hosting coordination, AgentDB, Strapi, GitHub, and centrally served operating playbooks.",
   "author": {
     "name": "Site Helper Team"
