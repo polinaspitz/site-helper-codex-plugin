@@ -3,7 +3,10 @@
     "site-helper-mcp-chatgpt": {
       "type": "http",
       "url": "https://mcp-chatgpt.ma2-work.net/mcp",
-      "bearer_token_env_var": "SITE_HELPER_MCP_TOKEN"
+      "bearer_token_env_var": "SITE_HELPER_MCP_TOKEN",
+      "env_http_headers": {
+        "X-MCP-User": "SITE_HELPER_MCP_USER"
+      }
     }
   }
 }
